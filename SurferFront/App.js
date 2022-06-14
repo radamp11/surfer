@@ -1,112 +1,74 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
+import React, { useEffect, useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, Text, View } from 'react-native';
 
-import React from 'react';
-import type {Node} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import Header from './components/header/header';
+import PostsList from './components/postsList/postsList';
+import SearchButton from './components/search/searchButton';
+import SearchPopup from './components/search/searchPopup';
+import fetchPosts from './components/api/fetchPosts';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
 
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-};
+// flat list for list scrolling view
 
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
+export default function App() {
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const serverUrl = 'http://10.0.2.2:8080/'
+  const twitterPosts = 'tweets/getposts/'
+
+  const jsonData = require('./mocks/example_response.json');
+
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [postsData, setPostsData] = useState();
+  const [query, setQuery] = useState();
+
+  function getNewPosts(queryParameters) {
+    setQuery(queryParameters)
   };
 
+  useEffect(() => {
+    if(query !== undefined && query !== {}) {
+      console.log('fetching posts with query: ', query);
+        fetch(serverUrl+twitterPosts, {
+          method: 'POST',
+          headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(query)
+        })
+        .then(res => {
+            if(res.ok) {
+                return res.json();
+            }
+        })
+        .then(data => setPostsData(data))
+        .catch(error => {
+            console.error('ERROR in fetching posts: ', error);
+        });
+      }
+    }, [query]);
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="monisia i adaś są super">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="hihihih <3">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.appContainer}>
+      <StatusBar style={styles.statusbar} />
+      <Header />
+      <PostsList postsData={postsData}/>
+      <SearchButton setSearchModalVisible={setSearchModalVisible} />
+      <SearchPopup isVisible={searchModalVisible} setModalVisible={setSearchModalVisible} getNewPosts={getNewPosts}/>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  statusbar: {
+
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  appContainer: {
+    flexDirection: 'column',
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9FEFF'
   },
 });
-
-export default App;
